@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#08090d">
+<title>DREAMER — Classified Case</title>
+<style>
+/* ============================================================
+   BASE
+   ============================================================ */
+*{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root{
+  --bg:#08090d;
+  --ink:#f5f2f7;
+  --muted:#9a94a5;
+  --dim:#6d6878;
+  --violet:#c77dff;
+  --violet-soft:#d9aaff;
+  --amber:#e8c07a;
+  --panel-a:rgba(27,25,34,.96);
+  --panel-b:rgba(12,13,18,.97);
+  --line:rgba(255,255,255,.11);
+}
+
+html{ height:100%; }
+
+body{
+  height:100%;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 15% 12%, #39213f, transparent 34%),
+    radial-gradient(circle at 86% 88%, #172b38, transparent 32%),
+    var(--bg);
+  color:var(--ink);
+  font-family:"Helvetica Neue", Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ============================================================
+   SCREENS  (fixed, internally scrollable, centred via margin:auto)
+   ============================================================ */
+.screen,
+.overlay{
+  position:fixed;
+  inset:0;
+  display:none;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding:20px;
+  padding-bottom:max(20px, env(safe-area-inset-bottom));
+}
+
+.screen.active{ display:flex; animation:screenIn .55s cubic-bezier(.22,1,.36,1); }
+.screen.active > *,
+.overlay.open > *{ margin:auto; }
+
+.overlay{
+  z-index:60;
+  background:rgba(5,5,9,.78);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+}
+.overlay.open{ display:flex; animation:fadeIn .3s ease; }
+
+.screen > *::-webkit-scrollbar,
+.overlay > *::-webkit-scrollbar{ display:none; }
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.card{
+  width:min(560px, 100%);
+  padding:30px 24px;
+  background:linear-gradient(145deg, var(--panel-a), var(--panel-b));
+  border:1px solid var(--line);
+  border-radius:26px;
+  box-shadow:0 30px 100px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter:blur(15px);
+  -webkit-backdrop-filter:blur(15px);
+  text-align:center;
+  position:relative;
+}
+
+.card.wide{ width:min(700px, 100%); }
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+h1{
+  font-size:clamp(46px, 13vw, 76px);
+  line-height:.88;
+  letter-spacing:-.06em;
+  font-weight:800;
+  margin:22px 0;
+  background:linear-gradient(180deg, #ffffff 20%, #b9a7c9 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+h2{ font-size:clamp(24px, 6vw, 30px); letter-spacing:-.02em; margin:14px 0 20px; }
+
+p{ color:#c9c5cf; line-height:1.65; margin:9px 0; font-size:15px; }
+
+.small{ font-size:12px; color:var(--dim); line-height:1.7; }
+.muted{ color:var(--muted); }
+
+.label{
+  display:inline-block;
+  padding:8px 14px;
+  border-radius:50px;
+  background:rgba(199,125,255,.1);
+  border:1px solid rgba(199,125,255,.28);
+  color:var(--violet-soft);
+  font-size:10px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  font-weight:700;
+}
+
+.case-number{
+  font-size:10px;
+  color:var(--amber);
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  font-weight:700;
+  margin-bottom:4px;
+}
+
+/* ============================================================
+   ICONS
+   ============================================================ */
+.icon{
+  font-size:56px;
+  line-height:1;
+  margin:14px 0;
+  animation:float 2.6s ease-in-out infinite;
+  display:inline-block;
+}
+
+/* ============================================================
+   PROGRESS
+   ============================================================ */
+.progress{
+  height:4px;
+  background:#292831;
+  border-radius:20px;
+  overflow:hidden;
+  margin-bottom:22px;
+}
+.progress-bar{
+  height:100%;
+  width:0%;
+  border-radius:20px;
+  background:linear-gradient(90deg, #7b3fb0, var(--violet), #e8c07a);
+  transition:width .7s cubic-bezier(.22,1,.36,1);
+}
+
+/* ============================================================
+   EVIDENCE BLOCK
+   ============================================================ */
+.evidence{
+  margin:22px 0;
+  padding:20px;
+  border:1px dashed rgba(255,255,255,.13);
+  border-radius:18px;
+  background:rgba(255,255,255,.025);
+  text-align:left;
+}
+
+.evidence-title{
+  color:var(--amber);
+  font-size:10px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  margin-bottom:12px;
+  font-weight:700;
+}
+
+.big-number{
+  font-size:clamp(34px, 9vw, 46px);
+  font-weight:800;
+  letter-spacing:-.03em;
+  margin:10px 0 18px;
+  line-height:1.05;
+}
+
+.stat-row{ display:flex; justify-content:space-between; align-items:baseline; gap:14px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.06); }
+.stat-row:last-child{ border-bottom:0; }
+.stat-row span:first-child{ color:#c9c5cf; font-size:14px; }
+.stat-row strong{ color:var(--violet-soft); font-size:15px; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+button{
+  border:0;
+  font-family:inherit;
+  padding:14px 22px;
+  margin:9px 4px 0;
+  border-radius:50px;
+  background:linear-gradient(180deg,#ffffff,#e2dce8);
+  color:#111;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+  transition:transform .18s ease, box-shadow .18s ease, filter .18s;
+  box-shadow:0 6px 20px rgba(0,0,0,.35);
+}
+button:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(0,0,0,.45); }
+button:active{ transform:scale(.96); }
+button:focus-visible{ outline:2px solid var(--violet); outline-offset:3px; }
+
+button.dark{
+  background:rgba(255,255,255,.07);
+  color:var(--ink);
+  border:1px solid var(--line);
+  box-shadow:none;
+}
+button.dark:hover{ background:rgba(255,255,255,.12); }
+
+button.ghost{
+  background:transparent;
+  color:var(--muted);
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:none;
+  font-size:13px;
+  padding:11px 18px;
+}
+
+/* ============================================================
+   INTRO
+   ============================================================ */
+.loading{
+  margin-top:22px;
+  color:var(--dim);
+  font-size:11px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+}
+.loading::after{ content:""; animation:dots 1.5s steps(1) infinite; }
+
+/* ============================================================
+   CASE BOARD
+   ============================================================ */
+.board-wrap{ width:min(700px, 100%); }
+
+.board-head{ text-align:center; margin-bottom:26px; }
+
+.board-head h1{ margin:16px 0 12px; }
+
+.board-meta{
+  font-size:10px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:16px;
+  font-weight:700;
+}
+.board-meta b{ color:var(--amber); }
+
+.board-wrap .progress{ margin-bottom:0; }
+
+/* --- folders --- */
+.folders{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:13px;
+  margin-top:22px;
+}
+
+.folder{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  text-align:left;
+  padding:18px 16px 18px 18px;
+  border-radius:4px 16px 16px 16px;
+  background:linear-gradient(160deg, #221c2b, #16121e);
+  border:1px solid rgba(255,255,255,.09);
+  border-left:3px solid var(--amber);
+  color:var(--ink);
+  cursor:pointer;
+  overflow:hidden;
+  margin:0;
+  box-shadow:0 8px 26px rgba(0,0,0,.35);
+  transition:transform .22s cubic-bezier(.22,1,.36,1), border-color .22s, box-shadow .22s;
+}
+
+.folder::after{
+  content:"";
+  position:absolute;
+  top:-1px; left:16px;
+  width:62px; height:7px;
+  border-radius:0 0 8px 8px;
+  background:rgba(232,192,122,.28);
+}
+
+.folder:hover{ transform:translateY(-4px); box-shadow:0 18px 40px rgba(0,0,0,.5); border-color:rgba(255,255,255,.18); }
+.folder:active{ transform:translateY(-1px) scale(.99); }
+
+.folder-idx{
+  font-size:9px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--amber);
+  font-weight:700;
+}
+
+.folder-title{
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:-.01em;
+  line-height:1.25;
+}
+
+.folder-status{
+  font-size:10px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--dim);
+  font-weight:700;
+  margin-top:4px;
+}
+
+/* locked */
+.folder.is-locked{
+  border-left-color:rgba(255,255,255,.15);
+  opacity:.5;
+  cursor:not-allowed;
+}
+.folder.is-locked:hover{ transform:none; box-shadow:0 8px 26px rgba(0,0,0,.35); }
+.folder.is-locked::after{ background:rgba(255,255,255,.14); }
+.folder.is-locked .folder-idx{ color:var(--dim); }
+
+/* closed */
+.folder.is-closed{ border-left-color:#5fae7a; }
+.folder.is-closed::after{ background:rgba(95,174,122,.35); }
+.folder.is-closed .folder-status{ color:#7fd39a; }
+
+.folder .tick{
+  position:absolute;
+  top:12px; right:12px;
+  width:22px; height:22px;
+  border-radius:50%;
+  background:rgba(95,174,122,.16);
+  border:1px solid rgba(95,174,122,.5);
+  color:#8fe0a9;
+  font-size:11px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-weight:800;
+}
+.folder.is-closed .tick{ display:flex; }
+
+.folder.unlocking{ animation:unlockFlash .9s ease; }
+
+.board-hint{
+  text-align:center;
+  font-size:12px;
+  color:var(--dim);
+  margin-top:20px;
+  min-height:18px;
+  letter-spacing:.04em;
+}
+
+/* ============================================================
+   CASE 01 — PINK
+   ============================================================ */
+.pink-resident{
+  font-size:44px;
+  display:inline-block;
+  animation:wiggle 3.4s ease-in-out infinite;
+}
+
+/* ============================================================
+   CASE 02 — MIRROR
+   ============================================================ */
+.mirror-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font-size:34px;
+  margin:10px 0 4px;
+}
+.mirror-eq{ font-size:22px; color:var(--dim); }
+
+.compare-out{
+  max-height:0;
+  opacity:0;
+  overflow:hidden;
+  transition:max-height .45s ease, opacity .35s ease, margin .35s;
+  margin-top:0;
+}
+.compare-out.show{ max-height:160px; opacity:1; margin-top:16px; }
+
+.compare-line{
+  font-size:13px;
+  color:var(--violet-soft);
+  letter-spacing:.04em;
+  padding:8px 0;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.compare-line:first-child{ border-top:0; }
+
+/* ============================================================
+   CASE 04 — KAISER / CIPHER
+   ============================================================ */
+.clue{
+  margin:16px 0;
+  padding:18px;
+  background:#111218;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.08);
+  font-size:15px;
+  line-height:1.6;
+  text-align:left;
+  color:#c9c5cf;
+}
+
+.clue-number{
+  color:var(--violet-soft);
+  font-size:10px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  margin-bottom:10px;
+  font-weight:700;
+}
+
+.clue strong{ color:#fff; }
+
+.hindi{
+  font-size:16px;
+  line-height:1.8;
+  color:#e6dcf0;
+  font-style:italic;
+}
+
+/* cipher dial */
+.dial{
+  margin:20px 0 6px;
+  padding:18px 14px;
+  border-radius:16px;
+  background:linear-gradient(160deg, #16121e, #0d0b12);
+  border:1px solid rgba(199,125,255,.22);
+  transition:box-shadow .5s, border-color .5s;
+}
+.dial.solved{
+  border-color:rgba(127,211,154,.6);
+  box-shadow:0 0 0 1px rgba(127,211,154,.25), 0 0 34px rgba(127,211,154,.18);
+}
+
+.dial-letters{
+  display:flex;
+  justify-content:center;
+  gap:6px;
+  flex-wrap:nowrap;
+  margin-bottom:16px;
+}
+
+.dial-letters span{
+  width:clamp(30px, 9.5vw, 44px);
+  height:clamp(38px, 11vw, 52px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:9px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.1);
+  font-size:clamp(16px, 5vw, 22px);
+  font-weight:800;
+  letter-spacing:0;
+  color:#fff;
+  transition:background .2s, border-color .2s, color .2s;
+}
+.dial.solved .dial-letters span{
+  background:rgba(127,211,154,.12);
+  border-color:rgba(127,211,154,.45);
+  color:#b6f5cb;
+}
+.dial-letters span.pop{ animation:pop .22s ease; }
+
+.dial-controls{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+
+.dial-btn{
+  width:42px; height:42px;
+  padding:0;
+  margin:0;
+  border-radius:50%;
+  background:rgba(255,255,255,.07);
+  border:1px solid var(--line);
+  color:#fff;
+  font-size:16px;
+  font-weight:800;
+  box-shadow:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.dial-btn:hover{ background:rgba(199,125,255,.18); transform:none; }
+
+.dial-readout{
+  font-size:11px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  min-width:132px;
+  text-align:center;
+  font-weight:700;
+}
+.dial-readout b{ color:var(--amber); font-size:14px; }
+
+/* input */
+input{
+  width:100%;
+  padding:15px 17px;
+  margin-top:16px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  outline:none;
+  background:#0c0d12;
+  color:#fff;
+  font-size:16px;
+  text-align:center;
+  font-family:inherit;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  transition:border-color .2s, box-shadow .2s;
+}
+input::placeholder{ text-transform:none; letter-spacing:0; color:#5d5866; }
+input:focus{ border-color:var(--violet); box-shadow:0 0 0 4px rgba(199,125,255,.12); }
+input.shake{ animation:shake .4s ease; }
+
+/* result */
+.result{
+  display:none;
+  margin-top:18px;
+  padding:18px;
+  border-radius:16px;
+  background:#211b28;
+  color:#dcbdf1;
+  line-height:1.65;
+  font-size:14px;
+  animation:screenIn .4s ease;
+  text-align:center;
+}
+.result.show{ display:block; }
+.result.good{ background:rgba(95,174,122,.12); color:#b6f5cb; border:1px solid rgba(95,174,122,.3); }
+.result strong{ color:#fff; }
+
+/* ============================================================
+   STAMP SLAM
+   ============================================================ */
+.stamp-slam{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  opacity:0;
+  z-index:5;
+}
+.stamp-slam span{
+  display:block;
+  padding:10px 26px;
+  border:4px solid rgba(232,192,122,.85);
+  border-radius:10px;
+  color:rgba(232,192,122,.95);
+  font-size:clamp(26px, 8vw, 40px);
+  font-weight:900;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  transform:rotate(-13deg) scale(2.4);
+  background:rgba(10,8,14,.35);
+  backdrop-filter:blur(2px);
+  text-shadow:0 0 22px rgba(232,192,122,.4);
+}
+.stamp-slam.slam{ opacity:1; animation:stampIn .55s cubic-bezier(.2,1.4,.4,1) forwards; }
+
+/* ============================================================
+   BIRTHDAY
+   ============================================================ */
+.final-heart{
+  font-size:62px;
+  line-height:1;
+  display:inline-block;
+  animation:heartbeat 1.8s ease-in-out infinite;
+}
+
+.letter{
+  text-align:left;
+  margin:22px 0 8px;
+  padding:20px;
+  border-radius:18px;
+  background:rgba(255,255,255,.025);
+  border:1px solid var(--line);
+  min-height:150px;
+}
+.letter p{ font-size:15px; line-height:1.75; margin:0 0 12px; color:#d2cdd8; }
+.letter p:last-child{ margin-bottom:0; }
+.letter .sig{ color:var(--violet-soft); font-style:italic; font-size:13px; }
+
+.caret{
+  display:inline-block;
+  width:7px;
+  height:1em;
+  background:var(--violet);
+  vertical-align:-.15em;
+  animation:blink 1s steps(1) infinite;
+}
+
+.confetti-canvas{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:200;
+}
+
+/* ============================================================
+   SECRET BUTTON
+   ============================================================ */
+#secretButton{
+  transition:transform .28s cubic-bezier(.34,1.56,.64,1), background .2s;
+  will-change:transform;
+}
+
+/* ============================================================
+   WISH LEDGER
+   ============================================================ */
+.wish-grid{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:22px 0 6px;
+}
+
+.wish-num{
+  width:54px;
+  height:54px;
+  padding:0;
+  margin:0;
+  border-radius:14px;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--line);
+  color:var(--ink);
+  font-size:20px;
+  font-weight:800;
+  box-shadow:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform .2s cubic-bezier(.22,1,.36,1), background .2s, border-color .2s, opacity .2s;
+}
+.wish-num:hover{
+  transform:translateY(-3px);
+  background:rgba(199,125,255,.18);
+  border-color:rgba(199,125,255,.4);
+}
+.wish-num:active{ transform:scale(.94); }
+.wish-num.selected{
+  background:rgba(127,211,154,.15);
+  border-color:rgba(127,211,154,.6);
+  color:#b6f5cb;
+}
+.wish-num.dim{ opacity:.3; }
+.wish-num:disabled{ cursor:default; }
+
+.wish-slots{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+  margin-top:18px;
+}
+
+.wish-slot{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:16px 14px;
+  border-radius:14px;
+  background:rgba(255,255,255,.04);
+  border:1px dashed rgba(255,255,255,.15);
+  color:var(--ink);
+  text-align:left;
+  font-size:13px;
+  box-shadow:none;
+  margin:0;
+  transition:background .2s, border-color .2s, transform .2s;
+}
+.wish-slot:hover{
+  transform:translateY(-2px);
+  background:rgba(199,125,255,.1);
+  border-color:rgba(199,125,255,.35);
+}
+.wish-slot:active{ transform:scale(.98); }
+.wish-slot.claimed{
+  background:rgba(127,211,154,.1);
+  border:1px solid rgba(127,211,154,.5);
+  cursor:default;
+}
+.wish-slot.claimed:hover{ transform:none; }
+
+.wish-slot-num{
+  font-size:10px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--amber);
+  font-weight:700;
+}
+.wish-slot.claimed .wish-slot-num{ color:#8fe0a9; }
+
+.wish-slot-text{
+  font-size:13px;
+  color:var(--muted);
+  font-weight:600;
+}
+.wish-slot.claimed .wish-slot-text{ color:#b6f5cb; }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes screenIn{ from{ opacity:0; transform:translateY(22px) scale(.985); } to{ opacity:1; transform:none; } }
+@keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes float{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-8px); } }
+@keyframes wiggle{ 0%,100%{ transform:rotate(-6deg); } 50%{ transform:rotate(6deg); } }
+@keyframes heartbeat{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.14); } }
+@keyframes dots{ 0%{ content:""; } 25%{ content:"."; } 50%{ content:".."; } 75%{ content:"..."; } 100%{ content:""; } }
+@keyframes pop{ 0%{ transform:scale(.7); opacity:.4; } 100%{ transform:scale(1); opacity:1; } }
+@keyframes shake{ 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-7px); } 40%{ transform:translateX(7px); } 60%{ transform:translateX(-4px); } 80%{ transform:translateX(4px); } }
+@keyframes stampIn{ 0%{ opacity:1; transform:rotate(-13deg) scale(2.4); } 60%{ opacity:1; transform:rotate(-13deg) scale(.92); } 100%{ opacity:1; transform:rotate(-13deg) scale(1); } }
+@keyframes blink{ 0%,49%{ opacity:1; } 50%,100%{ opacity:0; } }
+@keyframes unlockFlash{ 0%{ transform:scale(1); box-shadow:0 0 0 0 rgba(199,125,255,.6); } 50%{ transform:scale(1.04); box-shadow:0 0 0 14px rgba(199,125,255,0); } 100%{ transform:scale(1); box-shadow:0 8px 26px rgba(0,0,0,.35); } }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:560px){
+  .folders{ grid-template-columns:1fr; }
+  .card{ padding:26px 19px; border-radius:22px; }
+  h1{ letter-spacing:-.045em; }
+  .stamp-slam span{ letter-spacing:.12em; }
+  .wish-num{ width:48px; height:48px; font-size:18px; }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SCREEN 0 — INTRO
+     ============================================================ -->
+<section class="screen active" id="screen-intro">
+  <div class="card">
+    <div class="label">Classified Archive</div>
+    <h1>DREAMER</h1>
+    <p>A friendship report has been recovered.</p>
+    <p class="small">Unfortunately, several files appear to be classified.</p>
+    <div class="loading">Decrypting file</div>
+    <br>
+    <button id="openBoard">Open case board →</button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 1 — CASE BOARD (hub)
+     ============================================================ -->
+<section class="screen" id="screen-board">
+  <div class="board-wrap">
+    <div class="board-head">
+      <div class="label">Case Board</div>
+      <h1>DREAMER</h1>
+      <div class="board-meta">
+        <b id="closedCount">0</b> / 4 files closed
+      </div>
+      <div class="progress"><div class="progress-bar" id="boardBar"></div></div>
+    </div>
+
+    <div class="folders">
+      <button class="folder" data-case="pink">
+        <span class="tick">✓</span>
+        <span class="folder-idx">Case 01</span>
+        <span class="folder-title">The Pink Incident</span>
+        <span class="folder-status" data-status>Open file</span>
+      </button>
+
+      <button class="folder" data-case="mirror">
+        <span class="tick">✓</span>
+        <span class="folder-idx">Case 02</span>
+        <span class="folder-title">The Mirror File</span>
+        <span class="folder-status" data-status>Open file</span>
+      </button>
+
+      <button class="folder" data-case="stats">
+        <span class="tick">✓</span>
+        <span class="folder-idx">Case 03</span>
+        <span class="folder-title">Friendship Analysis</span>
+        <span class="folder-status" data-status>Open file</span>
+      </button>
+
+      <button class="folder is-locked" data-case="kaiser" id="folderKaiser">
+        <span class="tick">✓</span>
+        <span class="folder-idx">Case 04</span>
+        <span class="folder-title">The Unknown Person</span>
+        <span class="folder-status" data-status>🔒 Sealed</span>
+      </button>
+    </div>
+
+    <p class="board-hint" id="boardHint">Open a file to begin.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     OVERLAY — CASE 01 : PINK
+     ============================================================ -->
+<div class="overlay" id="ov-pink" role="dialog" aria-modal="true" aria-label="Case 01, The Pink Incident">
+  <div class="card">
+    <div class="stamp-slam" aria-hidden="true"><span>Filed</span></div>
+    <div class="case-number">Case #01 — The Pink Incident</div>
+    <div class="icon pink-resident">🩷</div>
+    <h2>Evidence recovered.</h2>
+
+    <div class="evidence">
+      <div class="evidence-title">Archive Note</div>
+      <p style="margin-top:0">
+        A certain tiny pink resident once occupied a suspicious amount of screen space.
+      </p>
+      <p style="margin-bottom:0"><strong style="color:#fff">No further explanation was provided.</strong></p>
+    </div>
+
+    <p>Status: <strong>missing from the archives.</strong></p>
+    <p class="muted small">Some things were unnecessarily cute.</p>
+
+    <button class="dark" data-close="pink">← Back to board</button>
+    <button data-file="pink">Stamp &amp; close file</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     OVERLAY — CASE 02 : MIRROR
+     ============================================================ -->
+<div class="overlay" id="ov-mirror" role="dialog" aria-modal="true" aria-label="Case 02, The Mirror File">
+  <div class="card">
+    <div class="stamp-slam" aria-hidden="true"><span>Filed</span></div>
+    <div class="case-number">Case #02 — The Mirror File</div>
+    <div class="icon">👥</div>
+    <h2>Something doesn't add up.</h2>
+
+    <div class="evidence">
+      <div class="evidence-title">Evidence Recovered</div>
+      <div class="mirror-row">
+        <span>👤</span><span class="mirror-eq">+</span><span>👤</span>
+      </div>
+      <p style="margin:12px 0 0">Two identities.<br>Matching evidence.<br>One extremely questionable decision.</p>
+
+      <div class="compare-out" id="compareOut">
+        <div class="compare-line">Identity A — 100% match</div>
+        <div class="compare-line">Identity B — 100% match</div>
+        <div class="compare-line">Conclusion — it was the same person all along.</div>
+      </div>
+    </div>
+
+    <p class="small">Investigators refuse to elaborate.</p>
+
+    <button class="ghost" id="compareBtn">Compare identities</button><br>
+    <button class="dark" data-close="mirror">← Back to board</button>
+    <button data-file="mirror">Stamp &amp; close file</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     OVERLAY — CASE 03 : STATS
+     ============================================================ -->
+<div class="overlay" id="ov-stats" role="dialog" aria-modal="true" aria-label="Case 03, Friendship Analysis">
+  <div class="card">
+    <div class="stamp-slam" aria-hidden="true"><span>Filed</span></div>
+    <div class="case-number">Friendship Analysis</div>
+    <div class="icon">📊</div>
+    <h2>Official findings</h2>
+
+    <div class="evidence">
+      <div class="evidence-title">Measured Outcomes</div>
+      <div class="stat-row"><span>💬 Random conversations</span><strong>∞</strong></div>
+      <div class="stat-row"><span>😂 Unnecessary laughter</span><strong>100%</strong></div>
+      <div class="stat-row"><span>🌀 Chaos</span><strong>also 100%</strong></div>
+    </div>
+
+    <p>Somehow...</p>
+    <p><strong style="color:#fff">the friendship survived.</strong></p>
+
+    <button class="dark" data-close="stats">← Back to board</button>
+    <button data-file="stats">Stamp &amp; close file</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     OVERLAY — CASE 04 : KAISER
+     ============================================================ -->
+<div class="overlay" id="ov-kaiser" role="dialog" aria-modal="true" aria-label="Case 04, The Unknown Person">
+  <div class="card wide">
+    <div class="stamp-slam" aria-hidden="true"><span>Solved</span></div>
+    <div class="case-number">Case #04 — The Unknown Person</div>
+    <div class="icon">🕵️</div>
+    <h2>One name keeps appearing.</h2>
+    <p class="muted small">The identity has been classified.<br> Play fair, don't kill the fun</p>
+
+    <!-- CLUE 1 -->
+    <div class="clue">
+      <div class="clue-number">Clue 01 — Language</div>
+      <div class="hindi">
+        "मेरी पहचान किसी राजा से नहीं, लेकिन मेरा नाम राजाओं के करीब है।"
+      </div>
+    </div>
+
+    <!-- CLUE 2 -->
+    <div class="clue">
+      <div class="clue-number">Clue 02 — History</div>
+      I am not a name. I am a <strong>title</strong>.<br><br>
+      And I am a copy of a much older one —
+      <strong>the Romans said it first.</strong>
+    </div>
+
+    <!-- CLUE 3 + CIPHER -->
+    <div class="clue">
+      <div class="clue-number">Clue 03 — Cipher (Only use, when you give up)</div>
+      <p style="margin:0 0 4px">The archive gave up six letters. They're shifted, not scrambled.</p>
+      <p style="margin:0 0 4px"><strong>Caesar's favourite number is 3.</strong></p>
+
+      <div class="dial" id="dial">
+        <div class="dial-letters" id="dialLetters" aria-live="polite"></div>
+        <div class="dial-controls">
+          <button class="dial-btn" id="dialDown" aria-label="Shift back one more letter">◀</button>
+          <div class="dial-readout">Shift back by <b id="dialValue">0</b></div>
+          <button class="dial-btn" id="dialUp" aria-label="Shift back one fewer letter">▶</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="ghost" id="hintBtn">Need a hint? 🕯️</button>
+    <div class="result" id="hintBox"></div>
+
+    <input id="answer" type="text" placeholder="Enter the classified name..."
+           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+           aria-label="Your answer">
+
+    <button id="solveCase">Solve case 🔐</button>
+    <div class="result" id="result" role="status" aria-live="polite"></div>
+
+    <br>
+    <button class="ghost" data-close="kaiser">← Back to board</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN 2 — ACHIEVEMENT
+     ============================================================ -->
+<section class="screen" id="screen-achievement">
+  <div class="card">
+    <div class="progress"><div class="progress-bar" id="achBar"></div></div>
+    <div class="icon">🏆</div>
+    <div class="case-number">Case Closed</div>
+    <h2>Achievement unlocked</h2>
+    <div class="big-number" style="font-size:clamp(26px,7vw,34px)">SURVIVED<br>ANOTHER YEAR</div>
+
+    <p>🔓 New level unlocked.</p>
+
+    <div class="evidence" style="text-align:center">
+      More laughs.<br>More memories.<br>More chaos.
+    </div>
+
+    <p class="small">The archive has one final message.</p>
+    <button id="finalFile">Open final file →</button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 3 — BIRTHDAY
+     ============================================================ -->
+<section class="screen" id="screen-birthday">
+  <div class="card">
+    <div class="final-heart">🎂</div>
+    <div class="label" style="margin-top:14px">File Closed</div>
+
+    <h1 style="font-size:clamp(34px,9.5vw,48px); letter-spacing:-.045em; line-height:.95;">
+      HAPPY<br>BIRTHDAY,<br>DREAMER.
+    </h1>
+
+    <div class="letter" id="letter"></div>
+
+    <br>
+    <button id="secretButton">Don't click this</button>
+    <button class="dark" id="replayButton">Replay ↻</button>
+
+    <div class="result" id="secret"></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 4 — WISH LEDGER
+     ============================================================ -->
+<section class="screen" id="screen-wishes">
+  <div class="card">
+    <div class="label">Wish Ledger</div>
+    <h1 style="font-size:clamp(38px,10vw,54px); letter-spacing:-.045em;">WISHES</h1>
+    <p class="muted">The archive has released your allowance.</p>
+    <p><strong>How many are you claiming?</strong></p>
+
+    <div class="wish-grid" id="wishGrid">
+      <button class="wish-num" data-num="0">0</button>
+      <button class="wish-num" data-num="1">1</button>
+      <button class="wish-num" data-num="2">2</button>
+      <button class="wish-num" data-num="3">3</button>
+      <button class="wish-num" data-num="4">4</button>
+    </div>
+
+    <div class="result" id="wishResult" role="status" aria-live="polite"></div>
+
+    <br>
+    <button class="ghost" id="backFromWishes">← Back</button>
+  </div>
+</section>
+
+<script>
+/* ============================================================
+   CONFIG — swap these for your own inside jokes
+   ============================================================ */
+const CONFIG = {
+  friend: "DREAMER",
+  pinkIncident: "a certain tiny pink resident once occupied a suspicious amount of screen space",
+  mirrorFile: "two identities, matching evidence, one extremely questionable decision",
+  signature: "— your favourite online nuisance",
+  letter: [
+    "Hope this year gives you a lot of reasons to smile.",
+    "And maybe fewer suspicious characters in the next report. 💀",
+    "Some memories are weirdly specific. Some are just little things.",
+    "And somehow, those are the ones that stick.",
+    "— your favourite online nuisance"
+  ]
+};
+
+/* ============================================================
+   SOUND (WebAudio — no files needed)
+   ============================================================ */
+const sfx = (() => {
+  let ctx = null;
+  const get = () => {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+    }
+    return ctx;
+  };
+
+  function tone(freq, dur = 0.08, type = "sine", gain = 0.05, delay = 0) {
+    const c = get();
+    if (!c) return;
+    try {
+      const t = c.currentTime + delay;
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(gain, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(c.destination);
+      o.start(t);
+      o.stop(t + dur + 0.03);
+    } catch (e) { /* silently ignore */ }
+  }
+
+  return {
+    click:  () => tone(520, 0.06, "triangle", 0.035),
+    stamp:  () => { tone(150, 0.11, "square", 0.045); tone(88, 0.2, "sine", 0.05, 0.02); },
+    ok:     () => { tone(660, 0.09, "sine", 0.045); tone(880, 0.11, "sine", 0.045, 0.09); tone(1320, 0.2, "sine", 0.035, 0.19); },
+    err:    () => { tone(200, 0.11, "sawtooth", 0.03); tone(148, 0.16, "sawtooth", 0.028, 0.09); },
+    unlock: () => { tone(440, 0.1, "sine", 0.04); tone(554, 0.1, "sine", 0.04, 0.1); tone(659, 0.18, "sine", 0.04, 0.2); }
+  };
+})();
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const FIRST_THREE = ["pink", "mirror", "stats"];
+const state = {
+  closed: new Set(),
+  kaiserUnlocked: false,
+  kaiserSolved: false,
+  wrongCount: 0,
+  hintStep: 0,
+  dialShift: 0,
+  dodges: 0,
+  secretRevealed: false
+};
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const reducedMotion = () =>
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function showScreen(id) {
+  $$(".screen").forEach((s) => s.classList.remove("active"));
+  const el = document.getElementById(id);
+  if (el) el.classList.add("active");
+}
+
+/* ============================================================
+   CASE BOARD
+   ============================================================ */
+function updateBoard() {
+  const count = state.closed.size;
+  $("#closedCount").textContent = count;
+  $("#boardBar").style.width = (count / 4) * 100 + "%";
+
+  $$(".folder").forEach((folder) => {
+    const id = folder.dataset.case;
+    const status = folder.querySelector("[data-status]");
+    const isClosed = state.closed.has(id);
+
+    folder.classList.toggle("is-closed", isClosed);
+
+    if (id === "kaiser") {
+      if (state.kaiserSolved) {
+        folder.classList.remove("is-locked");
+        status.textContent = "Solved ✓";
+      } else if (state.kaiserUnlocked) {
+        folder.classList.remove("is-locked");
+        status.textContent = "Unlocked — open file";
+      } else {
+        folder.classList.add("is-locked");
+        status.textContent = "🔒 Sealed";
+      }
+      return;
+    }
+
+    status.textContent = isClosed ? "Filed ✓" : "Open file";
+  });
+
+  // board hint
+  const hint = $("#boardHint");
+  if (state.kaiserSolved) {
+    hint.textContent = "All files closed. The archive is complete.";
+  } else if (state.kaiserUnlocked) {
+    hint.textContent = "The sealed file is open. One name remains.";
+  } else if (count === 0) {
+    hint.textContent = "Open a file to begin.";
+  } else {
+    hint.textContent = `${3 - count} more file${3 - count === 1 ? "" : "s"} to unseal Case 04.`;
+  }
+}
+
+function unlockKaiserIfReady() {
+  if (state.kaiserUnlocked) return;
+  if (!FIRST_THREE.every((id) => state.closed.has(id))) return;
+
+  state.kaiserUnlocked = true;
+  const folder = $("#folderKaiser");
+  folder.classList.add("unlocking");
+  setTimeout(() => folder.classList.remove("unlocking"), 950);
+  sfx.unlock();
+  updateBoard();
+}
+
+/* ============================================================
+   OVERLAYS
+   ============================================================ */
+function openOverlay(id) {
+  const ov = document.getElementById("ov-" + id);
+  if (!ov) return;
+
+  if (id === "kaiser" && !state.kaiserUnlocked) {
+    sfx.err();
+    const folder = $("#folderKaiser");
+    folder.classList.add("unlocking");
+    setTimeout(() => folder.classList.remove("unlocking"), 950);
+    $("#boardHint").textContent = "Sealed. Close the other three files first.";
+    return;
+  }
+
+  ov.classList.add("open");
+  sfx.click();
+
+  // focus management
+  const focusTarget = ov.querySelector("input, button");
+  if (focusTarget) setTimeout(() => focusTarget.focus({ preventScroll: true }), 120);
+}
+
+function closeOverlay(id) {
+  const ov = document.getElementById("ov-" + id);
+  if (ov) ov.classList.remove("open");
+}
+
+/* Stamp animation, then close */
+function stampAndClose(id) {
+  const ov = document.getElementById("ov-" + id);
+  const stamp = ov.querySelector(".stamp-slam");
+  sfx.stamp();
+
+  if (stamp) {
+    stamp.classList.add("slam");
+  }
+
+  const finish = () => {
+    if (stamp) stamp.classList.remove("slam");
+    closeOverlay(id);
+    state.closed.add(id);
+    updateBoard();
+    unlockKaiserIfReady();
+  };
+
+  if (reducedMotion()) {
+    finish();
+  } else {
+    setTimeout(finish, 820);
+  }
+}
+
+/* ============================================================
+   COMPARE (Case 02)
+   ============================================================ */
+function setupCompare() {
+  const btn = $("#compareBtn");
+  const out = $("#compareOut");
+  if (!btn || !out) return;
+
+  btn.addEventListener("click", () => {
+    const open = out.classList.toggle("show");
+    btn.textContent = open ? "Hide comparison" : "Compare identities";
+    sfx.click();
+  });
+}
+
+/* ============================================================
+   KAISER — CAESAR CIPHER DIAL
+   ============================================================ */
+const CIPHER = "NDLVHU";          // "KAISER" shifted +3
+const TARGET_SHIFT = 3;           // shift back by 3
+
+function decodeLetter(letter, shift) {
+  const code = letter.charCodeAt(0) - 65;
+  return String.fromCharCode(((code - shift + 26) % 26) + 65);
+}
+
+function renderDial() {
+  const wrap = $("#dialLetters");
+  const shift = state.dialShift;
+  const solved = shift === TARGET_SHIFT;
+
+  wrap.innerHTML = "";
+  for (const ch of CIPHER) {
+    const span = document.createElement("span");
+    span.textContent = decodeLetter(ch, shift);
+    if (solved) span.classList.add("pop");
+    wrap.appendChild(span);
+  }
+
+  $("#dialValue").textContent = shift;
+  $("#dial").classList.toggle("solved", solved);
+}
+
+function changeShift(delta) {
+  const next = Math.min(25, Math.max(0, state.dialShift + delta));
+  if (next === state.dialShift) return;
+  state.dialShift = next;
+  renderDial();
+  sfx.click();
+}
+
+function setupDial() {
+  renderDial();
+  $("#dialDown").addEventListener("click", () => changeShift(-1));
+  $("#dialUp").addEventListener("click", () => changeShift(1));
+}
+
+/* ============================================================
+   KAISER — HINTS
+   ============================================================ */
+const HINTS = [
+  "The letters aren't scrambled — every one of them moved by the same amount.",
+  "Shift each letter <strong>back</strong> by three places in the alphabet. N → K, D → A, L → I…",
+  "Use the dial. Set it to 3 and read what it spells."
+];
+
+function setupHints() {
+  const btn = $("#hintBtn");
+  const box = $("#hintBox");
+
+  btn.addEventListener("click", () => {
+    if (state.hintStep >= HINTS.length) {
+      box.innerHTML = "That's all the archive has. The rest is on you. 🕯️";
+      box.classList.add("show");
+      return;
+    }
+    const hint = HINTS[state.hintStep++];
+    box.innerHTML = `<strong>Hint ${state.hintStep}/${HINTS.length}</strong><br><br>${hint}`;
+    box.classList.add("show");
+    sfx.click();
+
+    if (state.hintStep >= HINTS.length) {
+      btn.textContent = "No more hints";
+      btn.disabled = true;
+      btn.style.opacity = ".45";
+    }
+  });
+}
+
+/* ============================================================
+   KAISER — ANSWER CHECK
+   ============================================================ */
+const WRONG_LINES = [
+  "❌ Incorrect. The investigator is disappointed. Try again, detective. 😭",
+  "❌ No. The archive remains sealed. (The clue is literally in the letters.)",
+  "❌ Not it. You're either overthinking this or underthinking it. Hard to tell.",
+  "❌ Rejected. A small stamp of shame has been applied to your answer.",
+  "❌ Wrong. The file sighs dramatically and slides back into the drawer."
+];
+
+function checkAnswer() {
+  if (state.kaiserSolved) return;
+
+  const input = $("#answer");
+  const result = $("#result");
+  const raw = input.value.trim().toLowerCase();
+
+  if (!raw) {
+    result.className = "result show";
+    result.innerHTML = "The archive waits. Type something. 🤨";
+    sfx.err();
+    return;
+  }
+
+  // the root, not the answer
+  if (raw === "caesar" || raw === "सीज़र" || raw === "सीजर") {
+    result.className = "result show";
+    result.innerHTML =
+      "🔎 Close. That's the <strong>root</strong>, not the answer.<br><br>" +
+      "The Romans said it first — but the Germans kept a version of it. " +
+      "Run the letters through the dial.";
+    sfx.err();
+    return;
+  }
+
+  if (raw === "kaiser") {
+    state.kaiserSolved = true;
+    result.className = "result show good";
+    result.innerHTML = `
+      <strong>🔓 CASE SOLVED.</strong><br><br>
+      HOW DID YOU KNOW THAT?! 💀<br><br>
+      The classified identity was:<br><br>
+      <strong style="font-size:22px; letter-spacing:.12em;">KAISER</strong><br><br>
+      <span style="font-size:12px; color:#8fbfa0;">
+        NDLVHU — shift back 3 — KAISER<br>
+        a title, borrowed from Caesar, carried by emperors.
+      </span><br><br>
+      Evidence will now be permanently deleted.
+      <br>
+      <button id="deleteEvidence" style="margin-top:14px;">Delete evidence →</button>
+    `;
+    sfx.ok();
+    confetti();
+
+    state.closed.add("kaiser");
+    updateBoard();
+
+    document.getElementById("deleteEvidence").addEventListener("click", () => {
+      sfx.click();
+      closeOverlay("kaiser");
+      setTimeout(() => {
+        showScreen("screen-achievement");
+        $("#achBar").style.width = "100%";
+      }, 260);
+    });
+    return;
+  }
+
+  // wrong
+  const line = WRONG_LINES[state.wrongCount % WRONG_LINES.length];
+  state.wrongCount++;
+  result.className = "result show";
+  result.innerHTML = line;
+  sfx.err();
+
+  input.classList.remove("shake");
+  void input.offsetWidth;
+  input.classList.add("shake");
+}
+
+/* ============================================================
+   TYPEWRITER (birthday letter)
+   ============================================================ */
+function typewriter(container, lines, speed = 20) {
+  container.innerHTML = "";
+
+  if (reducedMotion()) {
+    lines.forEach((line, i) => {
+      const p = document.createElement("p");
+      p.innerHTML = line;
+      if (i === lines.length - 1) p.className = "sig";
+      container.appendChild(p);
+    });
+    return;
+  }
+
+  let lineIndex = 0;
+  let charIndex = 0;
+
+  let p = document.createElement("p");
+  container.appendChild(p);
+
+  const caret = document.createElement("span");
+  caret.className = "caret";
+  p.appendChild(caret);
+
+  function step() {
+    if (lineIndex >= lines.length) {
+      caret.remove();
+      return;
+    }
+
+    const fullLine = lines[lineIndex];
+
+    if (charIndex < fullLine.length) {
+      charIndex++;
+      p.innerHTML = fullLine.slice(0, charIndex);
+      p.appendChild(caret);
+      setTimeout(step, speed + Math.random() * 26);
+      return;
+    }
+
+    // line complete
+    lineIndex++;
+    charIndex = 0;
+
+    if (lineIndex >= lines.length) {
+      caret.remove();
+      return;
+    }
+
+    p.classList.toggle("sig", lineIndex === lines.length - 1);
+
+    setTimeout(() => {
+      p = document.createElement("p");
+      container.appendChild(p);
+      p.appendChild(caret);
+      step();
+    }, 340);
+  }
+
+  step();
+}
+
+/* ============================================================
+   CONFETTI
+   ============================================================ */
+function confetti() {
+  if (reducedMotion()) return;
+
+  const canvas = document.createElement("canvas");
+  canvas.className = "confetti-canvas";
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext("2d");
+  let w = (canvas.width = window.innerWidth);
+  let h = (canvas.height = window.innerHeight);
+
+  const colors = ["#c77dff", "#e8c07a", "#f5f2f7", "#7ad0ff", "#ff8fb1", "#7fd39a"];
+
+  const parts = Array.from({ length: 110 }, () => ({
+    x: Math.random() * w,
+    y: -20 - Math.random() * h * 0.6,
+    vx: (Math.random() - 0.5) * 2.2,
+    vy: 2.2 + Math.random() * 3.4,
+    size: 4 + Math.random() * 6,
+    rot: Math.random() * Math.PI * 2,
+    vr: (Math.random() - 0.5) * 0.28,
+    color: colors[(Math.random() * colors.length) | 0]
+  }));
+
+  let frames = 0;
+
+  function frame() {
+    frames++;
+    ctx.clearRect(0, 0, w, h);
+
+    let alive = 0;
+    for (const p of parts) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.045;
+      p.rot += p.vr;
+
+      if (p.y < h + 40) alive++;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.7);
+      ctx.restore();
+    }
+
+    if (alive > 0 && frames < 300) {
+      requestAnimationFrame(frame);
+    } else {
+      canvas.remove();
+    }
+  }
+
+  requestAnimationFrame(frame);
+
+  window.addEventListener("resize", () => {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }, { once: true });
+}
+
+/* ============================================================
+   SECRET BUTTON (runs away) + WISH ESCALATION
+   ============================================================ */
+function setupSecretButton() {
+  const btn = $("#secretButton");
+  const out = $("#secret");
+
+  btn.addEventListener("pointerdown", (e) => {
+    if (state.dodges >= 3) return;
+
+    e.preventDefault();
+    state.dodges++;
+
+    const dx = (Math.random() * 2 - 1) * 74;
+    const dy = (Math.random() * 2 - 1) * 42;
+    const rot = (Math.random() * 2 - 1) * 7;
+
+    btn.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
+    btn.dataset.blocked = "1";
+    sfx.click();
+
+    if (state.dodges >= 3) {
+      setTimeout(() => {
+        btn.textContent = "…fine. Click it.";
+        btn.style.transform = "translate(0,0) rotate(0deg)";
+      }, 260);
+    }
+  });
+
+  btn.addEventListener("click", () => {
+    if (btn.dataset.blocked === "1") {
+      btn.dataset.blocked = "";
+      return;
+    }
+    if (state.dodges < 3) return;
+    if (state.secretRevealed) return;
+
+    state.secretRevealed = true;
+    btn.textContent = "…you clicked it 😭";
+    btn.disabled = true;
+
+    out.classList.add("show");
+    out.innerHTML = `
+      You clicked it. 😭<br><br>
+      Okay fine.<br>
+      Happy birthday again, <strong>${CONFIG.friend}.</strong><br><br>
+      Now go enjoy your day.
+      <br><br>
+      <button class="ghost" id="moreReveal">…actually, wait 📩</button>
+    `;
+    sfx.ok();
+    confetti();
+
+    document.getElementById("moreReveal").addEventListener("click", showWishEscalation);
+  });
+}
+
+function showWishEscalation() {
+  const out = $("#secret");
+  out.innerHTML = `
+    This was all from my side.<br><br>
+    But I have something more for you. 🎁<br><br>
+    You can have <strong>2 wishes</strong> from that dumb,<span class="small">(not me, obviously)</span> whatever you want. (except revealing things obv ;)<br>  
+    <br><br>
+    <button class="ghost" id="wantMore">Not enough? Want more? →</button>
+  `;
+  sfx.click();
+  document.getElementById("wantMore").addEventListener("click", showFourWishes);
+}
+
+function showFourWishes() {
+  const out = $("#secret");
+  out.innerHTML = `
+    Fine. <strong>choose it</strong><br>
+    Don't push it. 😤
+    <br><br>
+    <button class="ghost" id="openLedger">Open the wish ledger →</button>
+  `;
+  sfx.unlock();
+  document.getElementById("openLedger").addEventListener("click", () => {
+    sfx.click();
+    resetWishes();
+    showScreen("screen-wishes");
+  });
+}
+
+/* ============================================================
+   WISH LEDGER
+   ============================================================ */
+const WISH_RESPONSES = {
+  0: "Zero? You're turning down free wishes? Suspicious. Try again. 😤",
+  1: "One wish. Modest. Respectable. But the ledger knows you can do better.",
+  2: "Two? That was the old deal. You already upgraded. Don't downgrade. 😭",
+  3: "Three. So close. The ledger is holding its breath."
+};
+
+function setupWishLedger() {
+  const grid = $("#wishGrid");
+  const result = $("#wishResult");
+  if (!grid || !result) return;
+
+  grid.addEventListener("click", (e) => {
+    const btn = e.target.closest(".wish-num");
+    if (!btn || btn.disabled) return;
+    const num = parseInt(btn.dataset.num, 10);
+
+    if (num === 4) {
+      $$(".wish-num").forEach((b) => {
+        b.classList.toggle("selected", b === btn);
+        b.classList.toggle("dim", b !== btn);
+        b.disabled = true;
+      });
+      result.className = "result show good";
+      result.innerHTML = `<strong>🔓 LEDGER UNLOCKED.</strong><br><br>Four wishes. Tap each one to claim it.`;
+      sfx.ok();
+      confetti();
+      showWishSlots();
+      return;
+    }
+
+    result.className = "result show";
+    result.innerHTML = WISH_RESPONSES[num];
+    sfx.err();
+
+    btn.classList.remove("shake");
+    void btn.offsetWidth;
+    btn.classList.add("shake");
+  });
+
+  $("#backFromWishes").addEventListener("click", () => {
+    sfx.click();
+    showScreen("screen-birthday");
+  });
+}
+
+function showWishSlots() {
+  const old = document.getElementById("wishSlots");
+  if (old) old.remove();
+  const oldDone = document.getElementById("wishDone");
+  if (oldDone) oldDone.remove();
+
+  const wrap = document.createElement("div");
+  wrap.className = "wish-slots";
+  wrap.id = "wishSlots";
+
+  for (let i = 1; i <= 4; i++) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "wish-slot";
+    b.dataset.slot = i;
+    b.innerHTML = `
+      <span class="wish-slot-num">Wish ${String(i).padStart(2, "0")}</span>
+      <span class="wish-slot-text">Tap to claim</span>
+    `;
+    b.addEventListener("click", () => claimWish(b));
+    wrap.appendChild(b);
+  }
+
+  const result = $("#wishResult");
+  result.after(wrap);
+}
+
+function claimWish(btn) {
+  if (btn.classList.contains("claimed")) return;
+  btn.classList.add("claimed");
+  btn.querySelector(".wish-slot-text").textContent = "Claimed ✓";
+  sfx.ok();
+
+  if ($$(".wish-slot.claimed").length === 4) {
+    const done = document.createElement("div");
+    done.id = "wishDone";
+    done.className = "result show good";
+    done.style.marginTop = "16px";
+    done.innerHTML = `<strong>All four claimed. 🔒</strong><br>The ledger is sealed.<br>Redeem them anytime — Don be shy ^-^.`;
+    document.getElementById("wishSlots").after(done);
+    confetti();
+  }
+}
+
+function resetWishes() {
+  const result = $("#wishResult");
+  if (result) {
+    result.className = "result";
+    result.innerHTML = "";
+  }
+  const slots = document.getElementById("wishSlots");
+  if (slots) slots.remove();
+  const done = document.getElementById("wishDone");
+  if (done) done.remove();
+
+  $$(".wish-num").forEach((b) => {
+    b.classList.remove("selected", "dim", "shake");
+    b.disabled = false;
+  });
+}
+
+/* ============================================================
+   REPLAY
+   ============================================================ */
+function replay() {
+  state.closed.clear();
+  state.kaiserUnlocked = false;
+  state.kaiserSolved = false;
+  state.wrongCount = 0;
+  state.hintStep = 0;
+  state.dialShift = 0;
+  state.dodges = 0;
+  state.secretRevealed = false;
+
+  // reset UI
+  $("#answer").value = "";
+  $("#result").className = "result";
+  $("#result").innerHTML = "";
+  $("#hintBox").className = "result";
+  $("#hintBox").innerHTML = "";
+
+  const hintBtn = $("#hintBtn");
+  hintBtn.disabled = false;
+  hintBtn.style.opacity = "";
+  hintBtn.textContent = "Need a hint? 🕯️";
+
+  const secretBtn = $("#secretButton");
+  secretBtn.textContent = "Don't click this";
+  secretBtn.style.transform = "translate(0,0)";
+  secretBtn.dataset.blocked = "";
+  secretBtn.disabled = false;
+
+  const secret = $("#secret");
+  secret.className = "result";
+  secret.innerHTML = "";
+
+  const compareOut = $("#compareOut");
+  if (compareOut) compareOut.classList.remove("show");
+  const compareBtn = $("#compareBtn");
+  if (compareBtn) compareBtn.textContent = "Compare identities";
+
+  $("#letter").innerHTML = "";
+  $("#achBar").style.width = "0%";
+
+  $$(".stamp-slam").forEach((s) => s.classList.remove("slam"));
+  $$(".overlay").forEach((o) => o.classList.remove("open"));
+
+  resetWishes();
+  renderDial();
+  updateBoard();
+  showScreen("screen-board");
+}
+
+/* ============================================================
+   WIRE EVERYTHING UP
+   ============================================================ */
+function init() {
+  // intro
+  $("#openBoard").addEventListener("click", () => {
+    sfx.click();
+    showScreen("screen-board");
+    updateBoard();
+  });
+
+  // folders
+  $$(".folder").forEach((folder) => {
+    folder.addEventListener("click", () => openOverlay(folder.dataset.case));
+  });
+
+  // close buttons inside overlays
+  $$("[data-close]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sfx.click();
+      closeOverlay(btn.dataset.close);
+    });
+  });
+
+  // "stamp & close file" buttons
+  $$("[data-file]").forEach((btn) => {
+    btn.addEventListener("click", () => stampAndClose(btn.dataset.file));
+  });
+
+  // backdrops close overlays
+  $$(".overlay").forEach((ov) => {
+    ov.addEventListener("click", (e) => {
+      if (e.target === ov) {
+        ov.classList.remove("open");
+        sfx.click();
+      }
+    });
+  });
+
+  // escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    $$(".overlay.open").forEach((ov) => ov.classList.remove("open"));
+  });
+
+  // Case 02
+  setupCompare();
+
+  // Case 04
+  setupDial();
+  setupHints();
+  $("#solveCase").addEventListener("click", checkAnswer);
+  $("#answer").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") checkAnswer();
+  });
+
+  // achievement → birthday
+  $("#finalFile").addEventListener("click", () => {
+    sfx.click();
+    showScreen("screen-birthday");
+    setTimeout(() => {
+      typewriter($("#letter"), CONFIG.letter);
+      confetti();
+    }, 380);
+  });
+
+  // secret + wish ledger + replay
+  setupSecretButton();
+  setupWishLedger();
+  $("#replayButton").addEventListener("click", () => {
+    sfx.click();
+    replay();
+  });
+
+  // initial state
+  updateBoard();
+  renderDial();
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
